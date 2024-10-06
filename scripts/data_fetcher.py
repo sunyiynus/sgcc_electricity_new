@@ -84,7 +84,7 @@ class DataFetcher:
 
     def _requst_date(self):
         # 发送HTTP请求并获取网页内容
-        response = requests.get(BALANCE_URL)
+        response = requests.get(os.getenv("BALANCE_URL"))
         dates = {
             # 'user_id': 'body > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1)',
             'balance' : 'body > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2) > label'
