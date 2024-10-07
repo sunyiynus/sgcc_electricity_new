@@ -1,60 +1,77 @@
 import logging
-import os
-from datetime import datetime
-
 import requests
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from const import *
-
-
-class SensorUpdator:
-
-    def __init__(self, base_url: str, token: str):
-        self.base_url = base_url[:-1] if base_url.endswith("/") else base_url
-        self.token = token
-
-    def update(self, sensorName: str, present_date: str or None, sensorState: float, sensorUnit: str, month=False):
-        """
-        Update the sensor state
-        :param sensorName: 此为id，不是name
-        :param present_date: 主要用于确定最近一次用电量所代表的日期
-        :param sensorState: 传感器的状态
-        :param sensorUnit: 传感器的单位
-        :return:
-        """
-        token = os.getenv("SUPERVISOR_TOKEN") if self.base_url == SUPERVISOR_URL else self.token
-        headers = {
-            "Content-Type": "application-json",
-            "Authorization": "Bearer " + token
-
+class HomeAssistantUploader:
+    def __init__(self, collector, hass_url, hass_token):
+        self.collector = collector
+        self.hass_url = hass_url
+        self.hass_token = hass_token
+        self.headers = {
+            'Authorization': f'Bearer {self.hass_token}',
+            'Content-Type': 'application/json'
         }
-        if month:
-            last_updated = datetime.now().strftime("%Y-%m")
-        else:
-            last_updated = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z")
-        if present_date:
-            request_body = {
-                "state": sensorState,
-                "attributes": {
-                    "present_date": present_date,
-                    "unit_of_measurement": sensorUnit
-                }
-            }
-        else:
-            request_body = {
-                "state": sensorState,
-                "unique_id": sensorName,
-                "attributes": {
-                    "unit_of_measurement": sensorUnit
-                }
-            }
 
-        url = self.base_url + API_PATH + sensorName # /api/states/<entity_id>
+    def upload_daily_usage(self, entity_id='sensor.daily_usage'):
+        daily_usage = self.collector.get_daily_usage_value()
+        data = {
+            "state": daily_usage,
+            "attributes": {
+                "unit_of_measurement": "kWh",
+                "friendly_name": "Daily Energy Usage"
+            }
+        }
+        self._post_to_home_assistant(entity_id, data)
 
-        try:
-            response = requests.post(url, json=request_body, headers=headers)
-            logging.debug(
-                f"Homeassistant REST API invoke, POST on {url}. response[{response.status_code}]: {response.content}")
-            logging.info(f"Homeassistant sensor {sensorName} state updated: {sensorState}{sensorUnit}")
-        except Exception as e:
-            logging.error(f"Homeassistant REST API invoke failed, reason is {e}")
+    def upload_monthly_usage(self, entity_id='sensor.monthly_usage'):
+        monthly_usage = self.collector.get_monthly_usage_value()
+        data = {
+            "state": monthly_usage,
+            "attributes": {
+                "unit_of_measurement": "kWh",
+                "friendly_name": "Monthly Energy Usage"
+            }
+        }
+        self._post_to_home_assistant(entity_id, data)
+
+    def upload_yearly_usage(self, entity_id='sensor.yearly_usage'):
+        yearly_usage = self.collector.get_yearly_usage_value()
+        data = {
+            "state": yearly_usage,
+            "attributes": {
+                "unit_of_measurement": "kWh",
+                "friendly_name": "Yearly Energy Usage"
+            }
+        }
+        self._post_to_home_assistant(entity_id, data)
+
+    def upload_half_hourly_usage(self, entity_id='sensor.half_hourly_usage'):
+        half_hourly_usage = self.collector.get_half_hourly_usage_value()
+        data = {
+            "state": half_hourly_usage,
+            "attributes": {
+                "unit_of_measurement": "kWh",
+                "friendly_name": "Half-Hourly Energy Usage"
+            }
+        }
+        self._post_to_home_assistant(entity_id, data)
+
+    def upload_remaining_balance(self, entity_id='sensor.remaining_balance'):
+        remaining_balance = self.collector.get_remaining_balance()
+        data = {
+            "state": remaining_balance,
+            "attributes": {
+                "unit_of_measurement": "CNY",
+                "friendly_name": "Remaining Balance"
+            }
+        }
+        self._post_to_home_assistant(entity_id, data)
+
+    def _post_to_home_assistant(self, entity_id, data):
+        url = f"{self.hass_url}/api/states/{entity_id}"
+        response = requests.post(url, headers=self.headers, json=data)
+        if response.status_code == 200:
+            logging.info(f"成功上传到 {entity_id}: {data['state']} {data['attributes']['unit_of_measurement']}")
+        else:
+            logging.error(f"上传到 {entity_id} 失败: {response.text}")
