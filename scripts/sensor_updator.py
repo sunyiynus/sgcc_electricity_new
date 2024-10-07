@@ -10,7 +10,7 @@ class HomeAssistantUploader:
         self.hass_token = hass_token
         self.headers = {
             'Authorization': f'Bearer {self.hass_token}',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application-json'
         }
 
     def upload_daily_usage(self, entity_id='sensor.daily_usage'):
@@ -19,7 +19,9 @@ class HomeAssistantUploader:
             "state": daily_usage,
             "attributes": {
                 "unit_of_measurement": "kWh",
-                "friendly_name": "Daily Energy Usage"
+                "friendly_name": "Daily Energy Usage",
+                "device_class": "energy",
+                "state_class": "measurement"
             }
         }
         self._post_to_home_assistant(entity_id, data)
@@ -30,7 +32,9 @@ class HomeAssistantUploader:
             "state": monthly_usage,
             "attributes": {
                 "unit_of_measurement": "kWh",
-                "friendly_name": "Monthly Energy Usage"
+                "friendly_name": "Monthly Energy Usage",
+                "device_class": "energy",
+                "state_class": "measurement"
             }
         }
         self._post_to_home_assistant(entity_id, data)
@@ -41,7 +45,9 @@ class HomeAssistantUploader:
             "state": yearly_usage,
             "attributes": {
                 "unit_of_measurement": "kWh",
-                "friendly_name": "Yearly Energy Usage"
+                "friendly_name": "Yearly Energy Usage",
+                "device_class": "energy",
+                "state_class": "measurement"
             }
         }
         self._post_to_home_assistant(entity_id, data)
@@ -52,7 +58,9 @@ class HomeAssistantUploader:
             "state": half_hourly_usage,
             "attributes": {
                 "unit_of_measurement": "kWh",
-                "friendly_name": "Half-Hourly Energy Usage"
+                "friendly_name": "Half-Hourly Energy Usage",
+                "device_class": "energy",
+                "state_class": "measurement"
             }
         }
         self._post_to_home_assistant(entity_id, data)
@@ -63,7 +71,21 @@ class HomeAssistantUploader:
             "state": remaining_balance,
             "attributes": {
                 "unit_of_measurement": "CNY",
-                "friendly_name": "Remaining Balance"
+                "friendly_name": "Remaining Balance",
+                "device_class": "monetary"
+            }
+        }
+        self._post_to_home_assistant(entity_id, data)
+
+    def upload_remaining_charge(self, entity_id='sensor.remaining_balance'):
+        remaining_balance = self.collector.get_remaining_balance()
+        data = {
+            "state": remaining_balance,
+            "attributes": {
+                "unit_of_measurement": "kWh",
+                "friendly_name": "Remaining Charge",
+                "device_class": "energy",
+                "state_class": "measurement"
             }
         }
         self._post_to_home_assistant(entity_id, data)

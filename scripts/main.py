@@ -24,6 +24,7 @@ monthly_usage_entity_id = os.getenv("MONTHLY_USAGE_ENTITY_ID")
 yearly_usage_entity_id = os.getenv("YEARLY_USAGE_ENTITY_ID")
 half_hourly_usage_entity_id = os.getenv("HALF_HOURLY_USAGE_ENTITY_ID")
 remaining_balance_entity_id = os.getenv("REMAINING_BALANCE_ENTITY_ID")
+remaining_charge_entity_id = os.getenv("REMAINING_CHARGE_ENTITY_ID")
 
 # 获取定时任务时间配置
 half_hourly_interval = int(os.getenv("HALF_HOURLY_INTERVAL", 30))  # 默认值为30分钟
@@ -91,13 +92,18 @@ def main():
     def upload_remaining_balance():
         logging.info("执行剩余电费上传任务...")
         uploader.upload_remaining_balance(entity_id=remaining_balance_entity_id)
-    
+
+    def upload_remaining_charge():
+        logging.info("执行剩余电费上传任务...")
+        uploader.upload_remaining_charge(entity_id=remaining_charge_entity_id)
+
     def loging():
         remaining = float(get_remaining_power())
         collector.log(remaining)
 
     # 使用 .env 文件中的配置来设置定时任务
     schedule.every(1).minutes.do(loging)
+    schedule.every(half_hourly_interval).minutes.do(upload_remaining_charge)
     schedule.every(half_hourly_interval).minutes.do(upload_half_hourly_usage)
     schedule.every(half_hourly_interval).minutes.do(upload_remaining_balance)
     schedule.every().day.at(daily_upload_time).do(upload_daily_usage)
