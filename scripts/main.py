@@ -102,7 +102,7 @@ def main():
         collector.log(remaining)
 
     # 使用 .env 文件中的配置来设置定时任务
-    schedule.every(1).minutes.do(loging)
+    schedule.every(half_hourly_interval).minutes.do(loging)
     schedule.every(half_hourly_interval).minutes.do(upload_remaining_charge)
     schedule.every(half_hourly_interval).minutes.do(upload_half_hourly_usage)
     schedule.every(half_hourly_interval).minutes.do(upload_remaining_balance)
